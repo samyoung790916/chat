@@ -12,6 +12,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface DBInterface : NSObject
 
++(instancetype)sharedManager;
+-(instancetype)init;
+
+
+-(BOOL)createTable:(NSString *)strTableName arg1:(NSString *)strFieldName1 agrg2:(NSString *)strFieldName2 arg3:(NSString *)strFieldName3;
+-(void)DropTable;
+-(NSArray *)selectTable;
+-(void)udpateRecordWithName:(NSString *)fromUser time:(int)timestamp toUser:(NSString *)contents;
+
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -23,7 +23,7 @@
     self = [super init];
     if (self) {
         self.messages = [NSMutableArray new];
-        [self loadMessages];
+//        [self loadMessages];
         
  //       [self addPhotoMediaMessage];
 //        [self addVideoMediaMessage];
@@ -31,6 +31,67 @@
     }
     return self;
 }
+
+-(void)loadMessageArr:(NSMutableArray *)array
+{
+    
+
+    ZHCMessagesAvatarImageFactory *avatarFactory = [[ZHCMessagesAvatarImageFactory alloc] initWithDiameter:kZHCMessagesTableViewCellAvatarSizeDefault];
+    ZHCMessagesAvatarImage *cookImage = [avatarFactory avatarImageWithImage:[UIImage imageNamed:@"demo_avatar_cook"]];
+    
+    ZHCMessagesAvatarImage *jobsImage = [avatarFactory avatarImageWithImage:[UIImage imageNamed:@"demo_avatar_jobs"]];
+    
+    self.avatars = @{kZHCDemoAvatarIdCook : cookImage,
+                     kZHCDemoAvatarIdJobs : jobsImage};
+    
+    
+    self.users = @{ kZHCDemoAvatarIdJobs : kZHCDemoAvatarDisplayNameJobs,
+                    kZHCDemoAvatarIdCook : kZHCDemoAvatarDisplayNameCook};
+    
+  
+    ZHCMessagesBubbleImageFactory *bubbleFactory = [[ZHCMessagesBubbleImageFactory alloc] init];
+    
+    self.outgoingBubbleImageData = [bubbleFactory outgoingMessagesBubbleImageWithColor:[UIColor zhc_messagesBubbleBlueColor]];
+    self.incomingBubbleImageData = [bubbleFactory incomingMessagesBubbleImageWithColor:[UIColor zhc_messagesBubbleGreenColor]];
+    
+    
+    
+//    NSString *filePath = [[NSBundle mainBundle]pathForResource:@"data" ofType:@"json"];
+//    NSData *data = [[NSData alloc]initWithContentsOfFile:filePath];
+//    NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:nil];
+//    NSArray *array = [dic objectForKey:@"feed"];
+    
+    
+    NSMutableArray *muArray = [NSMutableArray array];
+    
+    
+    for (NSDictionary *dic in array) {
+        ZHUseFDModel *model = [[ZHUseFDModel alloc]initWithDictionary:dic];
+        [muArray addObject:model];
+    }
+    
+    for (NSUInteger i=0;i<muArray.count;i++) {
+        ZHUseFDModel *model = [muArray objectAtIndex:i];
+        NSString *avatarId = nil;
+        NSString *displayName = nil;
+        if (i%2== 0) {
+            avatarId = kZHCDemoAvatarIdCook;
+            displayName = kZHCDemoAvatarDisplayNameCook;
+        }else{
+            avatarId = kZHCDemoAvatarIdJobs;
+            displayName = kZHCDemoAvatarDisplayNameJobs;
+        }
+        ZHCMessage *message = [[ZHCMessage alloc]initWithSenderId:avatarId senderDisplayName:displayName date:[NSDate date] text:model.content];
+        [self.messages addObject:message];
+    }
+    
+    
+    
+}
+
+
+
+
 
 -(void)loadMessages
 {
@@ -71,6 +132,8 @@
     NSDictionary *dic = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableLeaves error:nil];
     NSArray *array = [dic objectForKey:@"feed"];
     NSMutableArray *muArray = [NSMutableArray array];
+    
+    
     for (NSDictionary *dic in array) {
         ZHUseFDModel *model = [[ZHUseFDModel alloc]initWithDictionary:dic];
         [muArray addObject:model];
@@ -90,8 +153,6 @@
         ZHCMessage *message = [[ZHCMessage alloc]initWithSenderId:avatarId senderDisplayName:displayName date:[NSDate date] text:model.content];
         [self.messages addObject:message];
     }
-    
-
 }
 
 

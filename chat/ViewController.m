@@ -8,12 +8,16 @@
 
 #import "ViewController.h"
 #import <AVFoundation/AVFoundation.h>
+#import <sqlite3.h>
+#import "DBInterface.h"
 
 
 
 @implementation WebServices
 
 NSString * baseUrl = @"http://35.194.195.240/service/";
+
+
 
 +(instancetype)sharedManager
 {
@@ -70,6 +74,13 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
 @interface ViewController (){
     ZHCAudioMediaItem * currentAudioItem;
     NSTimer * timer;
+    
+    sqlite3 * database; // 데이터베이스 연결정보
+    sqlite3_stmt * databaseStatement; // 쿼리 구문 컴파일러
+    
+    NSMutableArray * communication_list;
+    
+    
 }
 
 @end
@@ -77,45 +88,165 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
 @implementation ViewController
 
 - (void)viewDidLoad {
+
     [super viewDidLoad];
     
-    
-    
-    
-    
-    NSDictionary * param = @{@"clientid":@"dss_dasom2"};
-    NSMutableDictionary * json = [NSMutableDictionary new];
-    
-    [[WebServices sharedManager]request:@"prevchats" argment:param complete:^(NSArray *list, NSError *error) {
-        
-        int a = 100;
-    }];
-    
-    
-    
-    
-    
     self.messageTableView.estimatedRowHeight = 50.0f;
-
+    
     [[AVAudioSession sharedInstance]requestRecordPermission:^(BOOL granted) {
         if (!granted){
             UIAlertView * alertview = [[UIAlertView alloc]initWithTitle:@"Remind" message:@"The microphone cannot access will affect the recording function!" delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-
+            
             [alertview show];
         }
     }];
+    
+    communication_list = [[NSMutableArray alloc]init];
+    
+    
+    NSArray * arr = [[DBInterface sharedManager]selectTable];
+    NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc]initWithKey:@"time" ascending:YES];
+    NSArray * sortArray = [arr sortedArrayUsingDescriptors:@[sortDescriptor]];
+    
+    
+    for(id dict in sortArray){
+        
+        int time = [[dict objectForKey:@"time"]intValue];
+        NSString * fromUser = [dict objectForKey:@"fromUser"];
+        NSString * toUser = [dict objectForKey:@"toUser"];
+        
+        
+        
+        NSTimeInterval unixTimeStamp = time;
+        NSDate  *exactDate = [NSDate dateWithTimeIntervalSince1970:unixTimeStamp];
+        NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
+        dateFormatter.dateFormat = @"yyyy.MM.dd";
+        NSString  * finalate = [dateFormatter stringFromDate:exactDate];
+        
+        
+        
+        
+        
+        NSDictionary * anItem0 = @{@"content":fromUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"me"};
+        NSDictionary * anItem1 = @{@"content":toUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"pudding"};
+        
+        NSLog(@"%@ %@ %@", [anItem0 objectForKey:@"content"], [anItem0 objectForKey:@"time"],[anItem0 objectForKey:@"username"]);
+        NSLog(@"%@ %@ %@", [anItem1 objectForKey:@"content"], [anItem1 objectForKey:@"time"],[anItem1 objectForKey:@"username"]);
+        
+        
+        [communication_list addObject:anItem0];
+        [communication_list addObject:anItem1];
+        
+        
+        
+        
+        
+    }
+    
+    
+    
 
+//
+//    NSDictionary * param = @{@"fromdate":@"2019-04-05 00:00",@"todate":@"2019-04-09 00:00",@"limit":@"0",@"clientid":@"dss_dasom2"};
+//    NSMutableDictionary * json = [NSMutableDictionary new];
+//
+//    [[WebServices sharedManager]request:@"userchats" argment:param complete:^(NSArray *list, NSError *error) {
+//
+//        NSDictionary * dict = [list valueForKey:@"status"];
+//
+//        int status = [[dict objectForKey:@"code"]intValue];
+//
+//        if(status == 0)
+//        {
+//            NSDictionary * dict_dialogs = [list valueForKey:@"dialogs"];
+//            [[DBInterface sharedManager]createTable:@"communication_log" arg1:@"time" agrg2:@"fromUser" arg3:@"toUser"];
+//
+//            for(id dict in dict_dialogs){
+//
+//                NSString * strDate = [dict objectForKey:@"time"];
+//
+//                NSDate * date = [[NSDate alloc]init];
+//                NSDateFormatter * dateFormatter = [[NSDateFormatter alloc]init];
+//                [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
+//                dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+//                date = [dateFormatter dateFromString:strDate];
+//                NSTimeInterval ti = [date timeIntervalSince1970];
+//
+//                [[DBInterface sharedManager]udpateRecordWithName: [dict objectForKey:@"fromUser"] time:ti toUser:[dict objectForKey:@"toUser"]];
+//            }
+//
+//            NSArray * arr = [[DBInterface sharedManager]selectTable];
+//            NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc]initWithKey:@"time" ascending:YES];
+//            NSArray * sortArray = [arr sortedArrayUsingDescriptors:@[sortDescriptor]];
+//
+//
+//            for(id dict in sortArray){
+//
+//                int time = [[dict objectForKey:@"time"]intValue];
+//                NSString * fromUser = [dict objectForKey:@"fromUser"];
+//                NSString * toUser = [dict objectForKey:@"toUser"];
+//
+//
+//
+//                NSTimeInterval unixTimeStamp = time;
+//                NSDate  *exactDate = [NSDate dateWithTimeIntervalSince1970:unixTimeStamp];
+//                NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
+//                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
+//                dateFormatter.dateFormat = @"yyyy.MM.dd";
+//                NSString  * finalate = [dateFormatter stringFromDate:exactDate];
+//
+//
+//
+//
+//
+//                NSDictionary * anItem0 = @{@"content":fromUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"me"};
+//                NSDictionary * anItem1 = @{@"content":toUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"pudding"};
+//
+//                NSLog(@"%@ %@ %@", [anItem0 objectForKey:@"content"], [anItem0 objectForKey:@"time"],[anItem0 objectForKey:@"username"]);
+//                NSLog(@"%@ %@ %@", [anItem1 objectForKey:@"content"], [anItem1 objectForKey:@"time"],[anItem1 objectForKey:@"username"]);
+//
+//
+//                [communication_list addObject:anItem0];
+//                [communication_list addObject:anItem1];
+//
+//
+//
+//
+//
+//            }
+//
+//
+//
+//            int a = 100;
+//        }
+//    }];
+//
+    
+    
     self.demoData = [[ZHCModelData alloc]init];
+    
+    [self.demoData loadMessageArr:communication_list];
+    
+    
     self.title = @"ZHCMessages";
-
+    
     ZHCWeakSelf;
-
+    
     if(self.automaticallyScrollsToMostRecentMessage){
         dispatch_async(dispatch_get_main_queue(), ^{
             [weakSelf scrollToBottomAnimated:NO];
         });
-
+        
     }
+    
+    
+    
+    
+    
+
+
+
 }
 
 -(void)viewDidAppear:(BOOL)animated
@@ -302,9 +433,8 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    NSLog(@"%d", self.demoData.messages.count);
     
-    
+    NSLog(@"%d",self.demoData.messages.count);
     return self.demoData.messages.count;
 }
 
@@ -466,9 +596,6 @@ didChangeAudioCategory:(NSString *)category
 {
     return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location"];
 }
-
-
-
 
 
 
