@@ -10,11 +10,10 @@
 #import <sqlite3.h>
 
 @interface DBInterface()
-@property(copy,nonatomic)NSString * dbPath;
 @end
 
 @implementation DBInterface
-@synthesize dbPath = _dbPath;
+
 
 +(instancetype)sharedManager
 {
@@ -41,8 +40,6 @@
     NSString * documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];  // 도큐먼트 디렉토리 위치를 얻는다.
     NSString * filePath = [documentsDirectory stringByAppendingPathComponent:@"silver.sqlite"];                                         // 도큐먼트 위치에 db.sqlite 명으로 파일 패스 설정
     
-    self.dbPath = filePath;
-    
     if(sqlite3_open([filePath UTF8String], &database) != SQLITE_OK)
     {
         sqlite3_close(database);
@@ -60,14 +57,14 @@
     return YES;
 }
 
--(void)DropTable{
+-(void)DropTable
+{
     char * err;
     sqlite3 * database;
     
     NSString * documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];  // 도큐먼트 디렉토리 위치를 얻는다.
     NSString * filePath = [documentsDirectory stringByAppendingPathComponent:@"silver.sqlite"];                                         // 도큐먼트 위치에 db.sqlite 명으로 파일 패스 설정
-    
-    self.dbPath = filePath;
+
     
     if(sqlite3_open([filePath UTF8String], &database) != SQLITE_OK)
     {
@@ -83,22 +80,15 @@
     }
 }
 
-
-
 -(NSArray *)selectTable
 {
     sqlite3 * db;
     NSMutableArray * result = [NSMutableArray array];
-    //const char * dbFile = [self.dbPath UTF8String];
     
     NSString * documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];  // 도큐먼트 디렉토리 위치를 얻는다.
     NSString * filePath = [documentsDirectory stringByAppendingPathComponent:@"silver.sqlite"];                                         // 도큐먼트 위치에 db.sqlite 명으로 파일 패스 설정
-    
     const char * dbFile = [filePath UTF8String];
-    
-    
-    
-    // 1
+
     if(sqlite3_open(dbFile, &db) == SQLITE_OK)
     {
         const char * sql = [[NSString stringWithFormat:@"SELECT * FROM communication_log;"]UTF8String];
@@ -109,10 +99,8 @@
             while(sqlite3_step(stmt) == SQLITE_ROW)
             {
                 NSInteger time = sqlite3_column_int(stmt, 0);
-                NSString * fromUser     = [NSString stringWithUTF8String:(const char *)sqlite3_column_text(stmt, 1)];
-                NSString * contents     = [NSString stringWithUTF8String:(const char *)sqlite3_column_text(stmt, 2)];
-         //       NSString * contents1     = [NSString stringWithUTF8String:(const char *)sqlite3_column_text(stmt, 3)];
-                
+                NSString * fromUser = [NSString stringWithUTF8String:(const char *)sqlite3_column_text(stmt, 1)];
+                NSString * contents = [NSString stringWithUTF8String:(const char *)sqlite3_column_text(stmt, 2)];
                 
                 NSDictionary * anItem = @{@"fromUser":fromUser,@"time":[NSNumber numberWithInteger:time], @"toUser":contents};
                 [result addObject:anItem];
@@ -124,51 +112,30 @@
     if([result count] == 0){
         return nil;
     }
-    
     return result;
 }
 
 -(void)udpateRecordWithName:(NSString *)fromUser time:(int)timestamp toUser:(NSString *)contents;
 {
     sqlite3 * db;
-    
-    if(timestamp == 0){
-        int a = 100;
-    }
-    
-    
     NSString * documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];  // 도큐먼트 디렉토리 위치를 얻는다.
     NSString * filePath = [documentsDirectory stringByAppendingPathComponent:@"silver.sqlite"];                                         // 도큐먼트 위치에 db.sqlite 명으로 파일 패스 설정
     
     const char * dbFile = [filePath UTF8String];
     
-    
     if(sqlite3_open(dbFile, &db) == SQLITE_OK)
     {
-        
         sqlite3_stmt * insertStatement;
-        
         NSString * query = [NSString stringWithFormat:@"INSERT INTO communication_log (fromUser,time,toUser) VALUES(\"%@\",%ld,\"%@\")",fromUser,timestamp,contents];
-        //char * insertSql = "INSERT INTO communication_log (fromUser,time,toUser) VALUES(?,?,?)";
         
         char * err;
-        
         int nResult = sqlite3_exec(db, [query UTF8String], NULL, NULL, &err);
         
         if(nResult != SQLITE_OK){
             NSLog(@"%d",nResult);
-            
         }
     }
-    
-    
     sqlite3_close(db);
 }
-    
-
-
-
-
-
 
 @end

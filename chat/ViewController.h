@@ -16,7 +16,10 @@
 @interface WebServices : NSObject
 +(instancetype)sharedManager;
 -(instancetype)init;
+
 -(void)request:(NSString *)operation argment:(NSDictionary *)params complete:(void (^)(NSArray * list, NSError * error))completeHandler;
+-(NSArray *)request_sync:(NSString *)operation argment:(NSDictionary *)params;
+
 -(NSArray *)methodUsingJsonFromSuccessBlock:(NSData *)data;
 @end
 
