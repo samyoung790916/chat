@@ -81,7 +81,14 @@
             avatarId = kZHCDemoAvatarIdJobs;
             displayName = kZHCDemoAvatarDisplayNameJobs;
         }
-        ZHCMessage *message = [[ZHCMessage alloc]initWithSenderId:avatarId senderDisplayName:displayName date:[NSDate date] text:model.content];
+        
+        NSDateFormatter * dateFormat = [[NSDateFormatter alloc]init];
+        [dateFormat setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+        NSDate * date = [dateFormat dateFromString:model.time];
+        
+        
+        
+        ZHCMessage *message = [[ZHCMessage alloc]initWithSenderId:avatarId senderDisplayName:displayName date:date text:model.content];
         [self.messages addObject:message];
     }
     

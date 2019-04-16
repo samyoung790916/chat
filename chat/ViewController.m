@@ -115,30 +115,33 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
         }
     }];
     
+    
+    self.inputMessageBarView.hidden = YES;
+
     NSString * strStartDate, * strCurrentDate;
     NSDateFormatter * dateFormatter = [[NSDateFormatter alloc] init];
     dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm";
-    
-    
+
+
     communication_list = [[NSMutableArray alloc]init];
-    
+
     NSString * documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];  // 도큐먼트 디렉토리 위치를 얻는다.
     NSString * filePath = [documentsDirectory stringByAppendingPathComponent:@"silver.sqlite"];                                         // 도큐먼트 위치에 db.sqlite 명으로 파일 패스 설정
-    
+
     BOOL fileExists = [[NSFileManager defaultManager]fileExistsAtPath:filePath];
-    
+
     if(fileExists){
-        
+
         NSArray * arr = [[DBInterface sharedManager]selectTable];
         NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc]initWithKey:@"time" ascending:YES];
         NSArray * sortArray = [arr sortedArrayUsingDescriptors:@[sortDescriptor]];
-        
+
         int nLastIndex = (int)sortArray.count - 1;
-        
+
         NSDictionary * pDict = [sortArray objectAtIndex:nLastIndex];
-        
+
         int nTimeStamp = [[pDict objectForKey:@"time"]intValue];
-    
+
         NSDate * exactDate = [NSDate dateWithTimeIntervalSince1970:nTimeStamp];
         strStartDate     = [dateFormatter stringFromDate:exactDate];
         strCurrentDate   = [dateFormatter stringFromDate:[NSDate date]];
@@ -149,53 +152,58 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
         strCurrentDate   = [dateFormatter stringFromDate:[NSDate date]];
         [[DBInterface sharedManager]createTable:@"communication_log" arg1:@"time" agrg2:@"fromUser" arg3:@"toUser"];
     }
-    
+
     NSDictionary * param = @{@"fromdate":strStartDate,@"todate":strCurrentDate,@"limit":@"0",@"clientid":@"dss_dasom2"};
     NSMutableDictionary * json = [NSMutableDictionary new];
-    
-    
+
+
     NSArray * list = [[WebServices sharedManager]request_sync:@"userchats" argment:param];
     NSDictionary * dict = [list valueForKey:@"status"];
-    
+
     int status = [[dict objectForKey:@"code"]intValue];
-    
+
     if(status == 0)
     {
-        NSDictionary * dict_dialogs = [list valueForKey:@"dialogs"];
-        
-    
-        for(id dict in dict_dialogs){
-    
-            NSString * strDate = [dict objectForKey:@"time"];
-    
-            NSDate * date = [[NSDate alloc]init];
-            NSDateFormatter * dateFormatter = [[NSDateFormatter alloc]init];
-            [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
-            dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
-            date = [dateFormatter dateFromString:strDate];
-            NSTimeInterval ti = [date timeIntervalSince1970];
-    
-            [[DBInterface sharedManager]udpateRecordWithName: [dict objectForKey:@"fromUser"] time:ti toUser:[dict objectForKey:@"toUser"]];
+        id  dict_dialogs = [list valueForKey:@"dialogs"];
+
+
+        if([dict_dialogs isKindOfClass:[NSString class]] == YES){
+            //int a = 0;
         }
-    
+        else{
+            for(id dict in dict_dialogs){
+
+                NSString * strDate = [dict objectForKey:@"time"];
+
+                NSDate * date = [[NSDate alloc]init];
+                NSDateFormatter * dateFormatter = [[NSDateFormatter alloc]init];
+                [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
+                dateFormatter.dateFormat = @"yyyy-MM-dd HH:mm:ss";
+                date = [dateFormatter dateFromString:strDate];
+                NSTimeInterval ti = [date timeIntervalSince1970];
+
+                [[DBInterface sharedManager]udpateRecordWithName: [dict objectForKey:@"fromUser"] time:ti toUser:[dict objectForKey:@"toUser"]];
+            }
+        }
+
         NSArray * arr = [[DBInterface sharedManager]selectTable];
         NSSortDescriptor * sortDescriptor = [[NSSortDescriptor alloc]initWithKey:@"time" ascending:YES];
         NSArray * sortArray = [arr sortedArrayUsingDescriptors:@[sortDescriptor]];
-    
-    
+
+
         for(id dict in sortArray)
         {
             int time = [[dict objectForKey:@"time"]intValue];
             NSString * fromUser = [dict objectForKey:@"fromUser"];
             NSString * toUser = [dict objectForKey:@"toUser"];
-    
+
             NSTimeInterval unixTimeStamp = time;
             NSDate  * exactDate = [NSDate dateWithTimeIntervalSince1970:unixTimeStamp];
             NSDateFormatter * dateFormatter = [[NSDateFormatter alloc] init];
             [dateFormatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
-            dateFormatter.dateFormat = @"yyyy.MM.dd";
+            dateFormatter.dateFormat = @"yyyy.MM.dd HH:mm:ss";
             NSString  * finalate = [dateFormatter stringFromDate:exactDate];
-    
+
             NSDictionary * anItem0 = @{@"content":fromUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"me"};
             NSDictionary * anItem1 = @{@"content":toUser,@"imageName":@"", @"time":finalate,@"title":@"",@"username":@"pudding"};
 
@@ -203,13 +211,13 @@ NSString * baseUrl = @"http://35.194.195.240/service/";
             [communication_list addObject:anItem1];
         }
     }
-    
+
     self.demoData = [[ZHCModelData alloc]init];
     [self.demoData loadMessageArr:communication_list];
     self.title = @"ZHCMessages";
-    
+
     ZHCWeakSelf;
-    
+
     if(self.automaticallyScrollsToMostRecentMessage){
         dispatch_async(dispatch_get_main_queue(), ^{
             [weakSelf scrollToBottomAnimated:NO];
